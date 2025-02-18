@@ -10,7 +10,6 @@ model_name = "vidore/colpali-v1.3"
 model = ColPali.from_pretrained(
     model_name,
     torch_dtype=torch.bfloat16,
-    # device_map="cuda:0",  # or "mps" if on Apple Silicon
     device_map="mps",
 ).eval()
 
@@ -33,18 +32,17 @@ queries = [
 ]
 
 # Process the inputs
-start_time = time.time()
 batch_images = processor.process_images(images).to(model.device)
-print(f"Time to process images: {time.time() - start_time}")
-
-start_time = time.time()
 batch_queries = processor.process_queries(queries).to(model.device)
-print(f"Time to process queries: {time.time() - start_time}")
 
 # Forward pass
 with torch.no_grad():
+    start_time = time.time()
     image_embeddings = model(**batch_images)
+    print(f"Time to process images: {time.time() - start_time}")
+    start_time = time.time()
     query_embeddings = model(**batch_queries)
+    print(f"Time to process queries: {time.time() - start_time}")
 
 # Score the queries against the images
 scores = processor.score_multi_vector(query_embeddings, image_embeddings)
