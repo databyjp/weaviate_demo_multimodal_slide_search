@@ -1,20 +1,20 @@
 # Example adapted from https://huggingface.co/docs/transformers/en/model_doc/colpali
+import time
+from pathlib import Path
 import torch
 from PIL import Image
-from transformers.utils.import_utils import is_flash_attn_2_available
-from colpali_engine.models import ColQwen2, ColQwen2Processor
-from pathlib import Path
-import time
+from colpali_engine.models import ColPali, ColPaliProcessor
 
+model_name = "vidore/colpali-v1.3"
 
-model = ColQwen2.from_pretrained(
-    "vidore/colqwen2-v1.0",
+model = ColPali.from_pretrained(
+    model_name,
     torch_dtype=torch.bfloat16,
     # device_map="cuda:0",  # or "mps" if on Apple Silicon
     device_map="mps",
-    attn_implementation="flash_attention_2" if is_flash_attn_2_available() else None,  # or "eager" if "mps"
 ).eval()
-processor = ColQwen2Processor.from_pretrained("vidore/colqwen2-v1.0")
+
+processor = ColPaliProcessor.from_pretrained(model_name)
 
 img_path = Path("./data/img")
 img_paths = Path.glob(img_path, "*.png")
