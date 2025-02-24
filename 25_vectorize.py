@@ -4,6 +4,7 @@ from pathlib import Path
 import torch
 from PIL import Image
 from colpali_engine.models import ColPali, ColPaliProcessor
+import json
 
 model_name = "vidore/colpali-v1.3"
 
@@ -19,32 +20,29 @@ img_path = Path("./data/img")
 img_paths = Path.glob(img_path, "*.png")
 img_paths = sorted(img_paths)
 
-print(img_paths)
+img_paths = img_paths[:8] # Limit to 8 images for demonstration purposes
 
-images = [
-    Image.open(img_path).convert("RGB") for img_path in img_paths
-]
+images = [Image.open(img_path).convert("RGB") for img_path in img_paths]
 
-queries = [
-    "In block-max WAND, how is the information organised into an index, and why does that speed up retrieval?",
-    "What early termination algorithms are used in inverted index search, like early stopping, skipping within lists and omitting lists, or partial scoring?",
-    "What are the main differences between block-max WAND and regular WAND algorithm? How does block-max WAND organise the information and speed up retrieval?",
-]
+# Process inputs in batches of 8 images at a time
+batch_size = 8
+image_embeddings = []
 
-# Process the inputs
-batch_images = processor.process_images(images).to(model.device)
-batch_queries = processor.process_queries(queries).to(model.device)
+for i in range(0, len(images), batch_size):
+    batch_images = processor.process_images(images[i : i + batch_size]).to(model.device)
+    print(f"Processing images {i} to {i + batch_size}...")
+    with torch.no_grad():
+        start_time = time.time()
+        image_embeddings.append(model(**batch_images))
+        print(f"Time to process images: {time.time() - start_time}")
 
-# Forward pass
-with torch.no_grad():
-    start_time = time.time()
-    image_embeddings = model(**batch_images)
-    print(f"Time to process images: {time.time() - start_time}")
-    start_time = time.time()
-    query_embeddings = model(**batch_queries)
-    print(f"Time to process queries: {time.time() - start_time}")
+    image_embeddings = torch.cat(image_embeddings)
 
-# Score the queries against the images
-scores = processor.score_multi_vector(query_embeddings, image_embeddings)
+# Convert the image embeddings to a dictionary with lists
+image_embeddings_dict = {
+    img_path.stem: img_emb.cpu().to(torch.float32).numpy().tolist() for img_path, img_emb in zip(img_paths, image_embeddings)
+}
 
-print(scores)
+# Save the image embeddings to a JSON file
+with open("image_embeddings.json", "w") as f:
+    json.dump(image_embeddings_dict, f)
