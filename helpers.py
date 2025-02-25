@@ -6,7 +6,7 @@ from pathlib import Path
 from colpali_engine.models import ColPali, ColPaliProcessor
 import torch
 import logging
-from typing import Union, Optional
+from typing import Optional
 
 
 logging.basicConfig(level=logging.INFO)

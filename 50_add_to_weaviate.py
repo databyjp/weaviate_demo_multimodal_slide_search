@@ -17,7 +17,7 @@ pdfs = client.collections.create(
     ],
     vectorizer_config=[
         Configure.NamedVectors.none(
-            name="pdf_colpali_13",
+            name="pdf_colpali",
             vector_index_config=Configure.VectorIndex.hnsw(
                 multi_vector=Configure.VectorIndex.MultiVector.multi_vector(),
             ),
@@ -43,7 +43,7 @@ with pdfs.batch.fixed_size(10) as batch:
                     "filepath": str(img_file),
                     "image": base64.b64encode(img_file.read_bytes()).decode("utf-8"),
                 },
-                vector={"pdf_colpali_13": embeddings[i].tolist()},
+                vector={"pdf_colpali": embeddings[i].tolist()},
             )
 
 if pdfs.batch.failed_objects:
