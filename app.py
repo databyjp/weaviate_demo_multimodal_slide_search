@@ -77,9 +77,6 @@ with st.sidebar:
         "Enter your query", value="HNSW index parameters"
     )
 
-    # Number of results slider
-    num_results = st.slider("Number of results", min_value=1, max_value=12, value=6)
-
     # Search button
     search_button = st.button("Search")
 
@@ -96,6 +93,10 @@ with st.sidebar:
         if st.button(example[:40] + "..." if len(example) > 40 else example):
             query = example
             search_button = True
+
+    st.subheader("Query settings")
+    # Number of results slider
+    num_results = st.slider("Number of results", min_value=1, max_value=12, value=6)
 
 # Main area for displaying results
 if search_button or query:
