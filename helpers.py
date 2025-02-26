@@ -96,7 +96,7 @@ def text_to_colpali(
     texts: list[str],
     model: Optional[ColPali] = None,
     processor: Optional[ColPaliProcessor] = None,
-) -> list:
+) -> torch.Tensor:
     if not model or not processor:
         model, processor = get_model_and_processor()
 
@@ -108,7 +108,7 @@ def text_to_colpali(
         with torch.no_grad():
             embedding = model(**processed_text)
 
-        return embedding.tolist()
+        return embedding
 
     except Exception as e:
         raise ProcessingError(f"Failed to process text: {str(e)}")

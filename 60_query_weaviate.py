@@ -14,7 +14,7 @@ queries = [
 ]
 
 
-query_embeddings = text_to_colpali(queries)
+query_embeddings = text_to_colpali(queries).tolist()
 
 for i, query_embedding in enumerate(query_embeddings):
     print(f"Query: {queries[i]}")
