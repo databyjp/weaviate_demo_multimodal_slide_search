@@ -18,7 +18,6 @@ st.markdown(
 # Load the model and processor only once
 @st.cache_resource
 def load_model_and_processor():
-    st.info("Loading ColPali model and processor... This may take a moment.")
     model, processor = get_model_and_processor()
     return model, processor
 
@@ -87,9 +86,9 @@ with st.sidebar:
     # Example queries
     st.subheader("Example queries")
     example_queries = [
-        "Diagrams of Weaviate cluster architecture, with shards, indexes and model integrations.",
-        "How much does vector quantization impact memory footprint?",
-        "How do I create a new collection in Weaviate?",
+        "Diagrams of Weaviate cluster architecture",
+        "Memory savings and costs",
+        "How to create a new collection in Weaviate?",
         "Vector DBs and spongebob squarepants",
     ]
 

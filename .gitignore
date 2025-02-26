@@ -1,6 +1,7 @@
 data
 temp*.py
 *.png
+outputs
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
