@@ -2,17 +2,25 @@ import streamlit as st
 import numpy as np
 import torch
 from pathlib import Path
-import os
 from PIL import Image
-from helpers import text_to_colpali, get_model_and_processor, EMBEDDING_DIR
+from helpers import (
+    text_to_colpali,
+    get_model_and_processor,
+    render_svg_file,
+    EMBEDDING_DIR,
+    WEAVIATE_COLLECTION_NAME,
+)
+import weaviate
+from weaviate.classes.query import MetadataQuery
 
-# Set page title and layout
-st.set_page_config(page_title="Multimodal image search", layout="wide")
+client = weaviate.connect_to_local()
 
-st.title("Image Search")
+
+st.title("Weaviate + ColPali Image Search")
 st.markdown(
     "Search for images using natural language queries with ColPali (multi-modal, multi-dimensional vectorizer model)"
 )
+
 
 # Load embeddings only once on app startup
 # Load the model and processor only once
@@ -46,26 +54,21 @@ image_embeddings, image_paths = load_embeddings()
 
 
 # Function to perform search
-def search_images(query, top_k=6):
-    # Use the globally loaded model, processor and embeddings
-    # No need to reload them for each search
+def search_images(query, weaviate_client, top_k=6):
+    query_embedding = text_to_colpali(
+        texts=[query], model=model, processor=processor
+    ).tolist()[0]
 
-    # Convert query to embedding
-    query_embedding = text_to_colpali(texts=[query], model=model, processor=processor)
+    pdfs = weaviate_client.collections.get(name=WEAVIATE_COLLECTION_NAME)
 
-    # Calculate similarity scores
-    scores = processor.score_multi_vector(query_embedding, image_embeddings)
+    response = pdfs.query.near_vector(
+        near_vector=query_embedding,
+        target_vector="pdf_colpali",
+        limit=top_k,
+        return_metadata=MetadataQuery(distance=True),
+    )
 
-    # Find the index of the highest similarity score for each query
-    best_matches = torch.argsort(scores, dim=1, descending=True).squeeze(0)
-
-    # Get top k results
-    top_k_indices = best_matches[:top_k]
-
-    results = []
-    for idx in top_k_indices:
-        results.append({"path": image_paths[idx], "score": scores[0][idx].item()})
-    return results
+    return response
 
 
 # Create the sidebar for input
@@ -73,9 +76,7 @@ with st.sidebar:
     st.header("Search Settings")
 
     # Text input
-    query = st.text_input(
-        "Enter your query", value="HNSW index parameters"
-    )
+    query = st.text_input("Enter your query", value="HNSW index parameters")
 
     # Search button
     search_button = st.button("Search")
@@ -98,10 +99,18 @@ with st.sidebar:
     # Number of results slider
     num_results = st.slider("Number of results", min_value=1, max_value=12, value=6)
 
+    # Display the SVG logo with specified dimensions
+    st.write(
+        "Powered by:", render_svg_file(
+            "assets/weaviate-logo-square-dark.svg", width="80px", height="80px"
+        ),
+        unsafe_allow_html=True,
+    )
+
 # Main area for displaying results
 if search_button or query:
     with st.spinner("Searching for images..."):
-        results = search_images(query, top_k=num_results)
+        results = search_images(query, weaviate_client=client, top_k=num_results)
 
     st.subheader(f"Results for: '{query}'")
 
@@ -113,16 +122,18 @@ if search_button or query:
         columns = st.columns(cols)
         for col in range(cols):
             idx = row * cols + col
-            if idx < len(results):
-                result = results[idx]
+            if idx < len(results.objects):
+                result = results.objects[idx]
                 with columns[col]:
                     try:
                         # Display the image if it exists
-                        image_path_str = result["path"]
+                        image_path_str = result.properties["filepath"]
                         image_path = Path(image_path_str)
                         if image_path.exists():
                             img = Image.open(image_path)
-                            st.image(img, caption=f"Score: {result['score']:.4f}")
+                            st.image(
+                                img, caption=f"Distance: {result.metadata.distance:.2f}"
+                            )
                             st.caption(f"Path: {image_path_str}")
                         else:
                             st.error(f"Image not found: {image_path}")
