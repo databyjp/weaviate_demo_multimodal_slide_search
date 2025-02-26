@@ -7,12 +7,11 @@ from PIL import Image
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+import scipy.ndimage as ndimage
 
 
 def generate_explainability_plots(processor, model, image_path, image_embedding, query):
-    # Load the image and query
-    # image = Image.open("shift_kazakhstan.jpg")
-    # query = "Quelle partie de la production pétrolière du Kazakhstan provient de champs en mer ?"
+    # Load the image
     image = Image.open(image_path)
 
     # Preprocess inputs
@@ -23,12 +22,13 @@ def generate_explainability_plots(processor, model, image_path, image_embedding,
     batch_images = processor.process_images([image]).to(device)
 
     # Get the number of image patches
-    n_patches = processor.get_n_patches(image_size=image.size, patch_size=model.patch_size)
+    n_patches = processor.get_n_patches(
+        image_size=image.size, patch_size=model.patch_size
+    )
     image_mask = processor.get_image_mask(batch_images)
 
     # Forward passes
     with torch.no_grad():
-        # image_embeddings = model.forward(**batch_images)
         query_embeddings = model.forward(**batch_queries)
 
     # Generate the similarity maps
@@ -40,7 +40,7 @@ def generate_explainability_plots(processor, model, image_path, image_embedding,
     )
 
     # Get the similarity map for our (only) input image
-    similarity_maps = batched_similarity_maps[0]  # (query_length, n_patches_x, n_patches_y)
+    similarity_maps = batched_similarity_maps[0]
 
     # Tokenize the query
     query_tokens = processor.tokenizer.tokenize(query)
@@ -57,6 +57,49 @@ def generate_explainability_plots(processor, model, image_path, image_embedding,
 
     for idx, (fig, ax) in enumerate(plots):
         fig.savefig(explainability_dir / f"{query}_similarity_map_{idx}.png")
+    plt.close(fig)
+
+    # Create and save average heatmap
+    # Compute the average across all token maps
+    average_map = torch.mean(similarity_maps, dim=0).cpu().numpy()
+
+    # Get image dimensions for proper overlay
+    img_array = np.array(image)
+    img_height, img_width = img_array.shape[:2]
+
+    # Resize the average map to match image dimensions
+    resized_map = ndimage.zoom(
+        average_map,
+        (img_height / average_map.shape[0], img_width / average_map.shape[1]),
+        order=0,  # Changed from order=1 to order=0 for nearest neighbor
+    )
+
+    # Get the size from one of the individual plots for consistency
+    example_fig, _ = plots[0]
+    fig_width, fig_height = example_fig.get_size_inches()
+
+    # Create a new figure with matching dimensions
+    fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+
+    # Display the original image
+    ax.imshow(img_array)
+
+    # Overlay the resized average heatmap
+    heatmap = ax.imshow(resized_map, cmap="Oranges", alpha=0.5)
+
+    # Add a colorbar
+    plt.colorbar(heatmap, ax=ax, label="Average similarity")
+
+    # Set the title
+    ax.set_title(f"Average similarity for: {query}")
+
+    # Remove axis ticks for cleaner visualization
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+    # Save the average heatmap
+    fig.savefig(explainability_dir / f"{query}_average_heatmap.png")
+    plt.close(fig)
 
 
 embedding_paths = list(EMBEDDING_DIR.glob("*.npz"))
@@ -101,5 +144,5 @@ for query in queries:
         model=model,
         image_path=image_paths[best_matches[queries.index(query)]],
         image_embedding=image_embeddings[best_matches[queries.index(query)]],
-        query=query
+        query=query,
     )
