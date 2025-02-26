@@ -10,9 +10,12 @@ import torch
 import scipy.ndimage as ndimage
 
 
-def generate_explainability_plots(processor, model, image_path, image_embedding, query):
+def generate_explainability_plots(processor, model, image_path, image_embedding, query, query_embedding):
     # Load the image
     image = Image.open(image_path)
+
+    # Use the precomputed query embeddings from text_to_colpali
+    query_embeddings = query_embedding.unsqueeze(0).to(device)
 
     # Preprocess inputs
     batch_queries = processor.process_queries([query]).to(device)
@@ -26,10 +29,6 @@ def generate_explainability_plots(processor, model, image_path, image_embedding,
         image_size=image.size, patch_size=model.patch_size
     )
     image_mask = processor.get_image_mask(batch_images)
-
-    # Forward passes
-    with torch.no_grad():
-        query_embeddings = model.forward(**batch_queries)
 
     # Generate the similarity maps
     batched_similarity_maps = get_similarity_maps_from_embeddings(
@@ -71,7 +70,7 @@ def generate_explainability_plots(processor, model, image_path, image_embedding,
     resized_map = ndimage.zoom(
         average_map,
         (img_height / average_map.shape[0], img_width / average_map.shape[1]),
-        order=0,  # Changed from order=1 to order=0 for nearest neighbor
+        order=0,
     )
 
     # Get the size from one of the individual plots for consistency
@@ -138,11 +137,13 @@ print("Best match indices:", best_matches)
 best_scores = torch.max(scores, dim=1).values
 print("Best match scores:", best_scores)
 
-for query in queries:
+# For each query, pass the corresponding embedding from text_to_colpali
+for i, query in enumerate(queries):
     generate_explainability_plots(
         processor=processor,
         model=model,
-        image_path=image_paths[best_matches[queries.index(query)]],
-        image_embedding=image_embeddings[best_matches[queries.index(query)]],
+        image_path=image_paths[best_matches[i]],
+        image_embedding=image_embeddings[best_matches[i]],
         query=query,
+        query_embedding=query_embeddings[i],
     )
