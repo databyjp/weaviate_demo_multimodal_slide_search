@@ -9,7 +9,7 @@ from helpers import text_to_colpali, get_model_and_processor, EMBEDDING_DIR
 # Set page title and layout
 st.set_page_config(page_title="Multimodal image search", layout="wide")
 
-st.title("ColPali Image Search")
+st.title("Image Search")
 st.markdown(
     "Search for images using natural language queries with ColPali (multi-modal, multi-dimensional vectorizer model)"
 )
@@ -74,7 +74,7 @@ with st.sidebar:
 
     # Text input
     query = st.text_input(
-        "Enter your query", value="Diagrams of Weaviate cluster architecture"
+        "Enter your query", value="HNSW index parameters"
     )
 
     # Number of results slider
@@ -86,9 +86,9 @@ with st.sidebar:
     # Example queries
     st.subheader("Example queries")
     example_queries = [
-        "Diagrams of Weaviate cluster architecture",
+        "Weaviate cluster architecture",
         "Memory savings and costs",
-        "How to create a new collection in Weaviate?",
+        "How to create a new collection",
         "Vector DBs and spongebob squarepants",
     ]
 
