@@ -26,6 +26,3 @@ queries = [
 query_embeddings = text_to_colpali(queries)
 
 scores = processor.score_multi_vector(query_embeddings, image_embeddings)
-
-print(scores)
-print(scores.shape)
