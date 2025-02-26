@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 SRC_DIR = Path("./data/src")
 IMG_DIR = Path("./data/img")
+OUT_DIR = Path("./data/out")
 EMBEDDING_DIR = Path("./data/embeddings")
 
 MODEL_NAME = "vidore/colpali-v1.3"
