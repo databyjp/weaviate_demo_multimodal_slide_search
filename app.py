@@ -76,7 +76,7 @@ with st.sidebar:
     st.header("Search Settings")
 
     # Text input
-    query = st.text_input("Enter your query", value="HNSW index parameters")
+    query = st.text_input("Enter your query", value="")
 
     # Search button
     search_button = st.button("Search")
@@ -108,7 +108,7 @@ with st.sidebar:
     )
 
 # Main area for displaying results
-if search_button or query:
+if search_button or len(query) > 0:
     with st.spinner("Searching for images..."):
         results = search_images(query, weaviate_client=client, top_k=num_results)
 
