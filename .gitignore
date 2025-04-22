@@ -1,6 +1,8 @@
 data/embeddings
 temp*.py
 outputs
+secrets.toml
+.streamlit
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -211,7 +213,8 @@ Temporary Items
 .LSOverride
 
 # Icon must end with two \r
-Icon
+Icon
+
 
 # Thumbnails
 ._*
