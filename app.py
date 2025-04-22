@@ -21,6 +21,10 @@ import os
 # from dotenv import load_dotenv
 # load_dotenv()
 
+# Initialize session state for query
+if 'query' not in st.session_state:
+    st.session_state.query = ""
+
 client = weaviate.connect_to_weaviate_cloud(
     cluster_url=os.environ["APP_WEAVIATE_CLOUD_URL"],
     auth_credentials=Auth.api_key(os.environ["APP_WEAVIATE_CLOUD_APIKEY"]),
@@ -31,7 +35,7 @@ client = weaviate.connect_to_weaviate_cloud(
 
 st.title("Weaviate + Multimodal Image Search")
 st.markdown(
-    "Search for images using natural language queries with a multi-modal vectorizer model)"
+    "Search for images using natural language queries with a multi-modal vectorizer model"
 )
 
 
@@ -53,11 +57,19 @@ def search_images(query, weaviate_client, top_k=6):
 with st.sidebar:
     st.header("Search Settings")
 
-    # Text input
-    query = st.text_input("Enter your query", value="")
+    # Function to reset query
+    def reset_query():
+        st.session_state.query = ""
+
+    # Text input using session state
+    query = st.text_input("Enter your query", key="query")
 
     # Search button
-    search_button = st.button("Search")
+    col1, col2 = st.columns(2)
+    with col1:
+        search_button = st.button("Search")
+    with col2:
+        reset_button = st.button("Reset", on_click=reset_query)
 
     # Example queries
     st.subheader("Example queries")
@@ -68,9 +80,14 @@ with st.sidebar:
         "Vector DBs and spongebob squarepants",
     ]
 
+    # Function to set example query
+    def set_example_query(example):
+        st.session_state.query = example
+
     for example in example_queries:
-        if st.button(example[:40] + "..." if len(example) > 40 else example):
-            query = example
+        if st.button(example[:40] + "..." if len(example) > 40 else example,
+                     on_click=set_example_query,
+                     args=(example,)):
             search_button = True
 
     st.subheader("Query settings")
@@ -86,7 +103,7 @@ with st.sidebar:
     )
 
 # Main area for displaying results
-if search_button or len(query) > 0:
+if (search_button or len(query) > 0) and query.strip():
     with st.spinner("Searching for images..."):
         results = search_images(query, weaviate_client=client, top_k=num_results)
 
@@ -117,5 +134,7 @@ if search_button or len(query) > 0:
                             st.error(f"Image not found: {image_path}")
                     except Exception as e:
                         st.error(f"Error loading image: {str(e)}")
+elif search_button and not query.strip():
+    st.error("Please enter a search query before clicking the Search button.")
 else:
-    st.info("Enter a query in the sidebar and click 'Search' to find images.")
+    st.info("Have you ever tried to find a particular slide? It's a huge pain. \n\nBut... not with **multimodal search!** \n\nEnter a query in the sidebar and click 'Search' to find images.")
