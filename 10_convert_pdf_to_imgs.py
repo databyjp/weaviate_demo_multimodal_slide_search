@@ -1,7 +1,3 @@
-from pathlib import Path
-import torch
-import h5py
-import numpy as np
 import logging
 from helpers import ProcessingError, convert_pdf_to_images, SRC_DIR, IMG_DIR
 
