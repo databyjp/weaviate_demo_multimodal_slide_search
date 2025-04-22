@@ -1,8 +1,13 @@
 from helpers import WEAVIATE_COLLECTION_NAME, text_to_colpali
 import weaviate
 from weaviate.classes.query import MetadataQuery
+import os
 
-client = weaviate.connect_to_local()
+client = weaviate.connect_to_local(
+    headers={
+        "X-Cohere-Api-Key": os.environ["COHERE_APIKEY"]
+    }
+)
 
 pdfs = client.collections.get(name=WEAVIATE_COLLECTION_NAME)
 
@@ -13,14 +18,11 @@ queries = [
     "Vector DBs and spongebob squarepants",
 ]
 
-
-query_embeddings = text_to_colpali(queries).tolist()
-
-for i, query_embedding in enumerate(query_embeddings):
+for i, query in enumerate(queries):
     print(f"Query: {queries[i]}")
-    r = pdfs.query.near_vector(
-        near_vector=query_embedding,
-        target_vector="pdf_colpali",
+    r = pdfs.query.near_text(
+        query=query,
+        target_vector="cohere",
         limit=2,
         return_metadata=MetadataQuery(distance=True)
     )

@@ -4,30 +4,24 @@ import torch
 from pathlib import Path
 from PIL import Image
 from helpers import (
-    text_to_colpali,
-    get_model_and_processor,
     render_svg_file,
     EMBEDDING_DIR,
     WEAVIATE_COLLECTION_NAME,
 )
 import weaviate
 from weaviate.classes.query import MetadataQuery
+import os
 
-client = weaviate.connect_to_local()
-
-
-st.title("Weaviate + ColPali Image Search")
-st.markdown(
-    "Search for images using natural language queries with ColPali (multi-modal, multi-dimensional vectorizer model)"
+client = weaviate.connect_to_local(
+    headers={
+        "X-Cohere-Api-Key": os.environ["COHERE_APIKEY"]
+    }
 )
 
-
-# Load embeddings only once on app startup
-# Load the model and processor only once
-@st.cache_resource
-def load_model_and_processor():
-    model, processor = get_model_and_processor()
-    return model, processor
+st.title("Weaviate + Multimodal Image Search")
+st.markdown(
+    "Search for images using natural language queries with a multi-modal vectorizer model)"
+)
 
 
 # Load embeddings only once on app startup
@@ -48,22 +42,13 @@ def load_embeddings():
     return image_embeddings, image_paths
 
 
-# Initialize the model, processor, and embeddings at app startup
-model, processor = load_model_and_processor()
-image_embeddings, image_paths = load_embeddings()
-
-
 # Function to perform search
 def search_images(query, weaviate_client, top_k=6):
-    query_embedding = text_to_colpali(
-        texts=[query], model=model, processor=processor
-    ).tolist()[0]
-
     pdfs = weaviate_client.collections.get(name=WEAVIATE_COLLECTION_NAME)
 
-    response = pdfs.query.near_vector(
-        near_vector=query_embedding,
-        target_vector="pdf_colpali",
+    response = pdfs.query.near_text(
+        query=query,
+        target_vector="cohere",
         limit=top_k,
         return_metadata=MetadataQuery(distance=True),
     )
@@ -141,13 +126,3 @@ if search_button or len(query) > 0:
                         st.error(f"Error loading image: {str(e)}")
 else:
     st.info("Enter a query in the sidebar and click 'Search' to find images.")
-
-# Add helpful information at the bottom
-st.markdown("---")
-st.markdown(
-    """
-### About ColPali
-ColPali is a multi-modal, multi-vector model based on PaliGemma and CoLBERT. It allows for semantic search across text and images.
-This application uses pre-computed embeddings to find the most relevant images for your query.
-"""
-)
