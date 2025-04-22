@@ -9,7 +9,6 @@ from helpers import (
 import weaviate
 from weaviate.classes.query import MetadataQuery
 from weaviate.classes.init import Auth
-from dotenv import load_dotenv
 import os
 
 # client = weaviate.connect_to_local(
@@ -18,7 +17,9 @@ import os
 #     }
 # )
 
-load_dotenv()
+# Not necessary as secrets loaded from .streamlit/secrets.toml
+# from dotenv import load_dotenv
+# load_dotenv()
 
 client = weaviate.connect_to_weaviate_cloud(
     cluster_url=os.environ["APP_WEAVIATE_CLOUD_URL"],
