@@ -1,12 +1,10 @@
 import streamlit as st
-import numpy as np
-import torch
 from pathlib import Path
 from PIL import Image
 from helpers import (
     render_svg_file,
-    EMBEDDING_DIR,
     WEAVIATE_COLLECTION_NAME,
+    IMG_DIR
 )
 import weaviate
 from weaviate.classes.query import MetadataQuery
@@ -22,24 +20,6 @@ st.title("Weaviate + Multimodal Image Search")
 st.markdown(
     "Search for images using natural language queries with a multi-modal vectorizer model)"
 )
-
-
-# Load embeddings only once on app startup
-@st.cache_resource
-def load_embeddings():
-    embedding_paths = list(EMBEDDING_DIR.glob("*.npz"))
-    image_embeddings = []
-    image_paths = []
-
-    for embedding_path in embedding_paths:
-        data = np.load(embedding_path, allow_pickle=True)
-        embeddings = data["embeddings"]
-        filepaths = data["filepaths"]
-        for i, filepath in enumerate(filepaths):
-            image_embeddings.append(torch.from_numpy(embeddings[i]))
-            image_paths.append(filepath)
-
-    return image_embeddings, image_paths
 
 
 # Function to perform search
@@ -113,7 +93,7 @@ if search_button or len(query) > 0:
                     try:
                         # Display the image if it exists
                         image_path_str = result.properties["filepath"]
-                        image_path = Path(image_path_str)
+                        image_path = Path(IMG_DIR) / Path(image_path_str)
                         if image_path.exists():
                             img = Image.open(image_path)
                             st.image(

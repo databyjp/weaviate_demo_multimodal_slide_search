@@ -1,4 +1,4 @@
-from helpers import WEAVIATE_COLLECTION_NAME, text_to_colpali
+from helpers import WEAVIATE_COLLECTION_NAME
 import weaviate
 from weaviate.classes.query import MetadataQuery
 import os

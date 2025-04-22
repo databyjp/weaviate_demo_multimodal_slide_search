@@ -1,6 +1,4 @@
-import numpy as np
-from helpers import EMBEDDING_DIR, WEAVIATE_COLLECTION_NAME
-from pathlib import Path
+from helpers import IMG_DIR, WEAVIATE_COLLECTION_NAME
 import weaviate
 from weaviate.classes.config import Property, DataType, Configure
 import base64
@@ -31,22 +29,17 @@ pdfs = client.collections.create(
 )
 
 
-embedding_paths = list(EMBEDDING_DIR.glob("*.npz"))
-embeddings = {}
+img_paths = list(IMG_DIR.glob("*.png"))
 
 
 with pdfs.batch.fixed_size(10) as batch:
-    for embedding_path in embedding_paths:
-        data = np.load(embedding_path, allow_pickle=True)
-        filepaths = data["filepaths"]
-        for i, filepath in enumerate(filepaths):
-            img_file = Path(filepath)
-            batch.add_object(
-                properties={
-                    "filepath": str(img_file),
-                    "image": base64.b64encode(img_file.read_bytes()).decode("utf-8"),
-                },
-            )
+    for img_path in img_paths:
+        batch.add_object(
+            properties={
+                "filepath": str(img_path.name),
+                "image": base64.b64encode(img_path.read_bytes()).decode("utf-8"),
+            },
+        )
 
 if pdfs.batch.failed_objects:
     print(pdfs.batch.failed_objects[0].message)
