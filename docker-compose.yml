@@ -8,12 +8,12 @@ services:
     - '8080'
     - --scheme
     - http
-    image: cr.weaviate.io/semitechnologies/weaviate:1.29.0
+    image: cr.weaviate.io/semitechnologies/weaviate:1.30.5
     ports:
     - 8080:8080
     - 50051:50051
     volumes:
-    - weaviate_data:/var/lib/weaviate
+    - colpali_demo:/var/lib/weaviate
     restart: on-failure:0
     environment:
       QUERY_DEFAULTS_LIMIT: 25
@@ -25,5 +25,5 @@ services:
       BACKUP_FILESYSTEM_PATH: '/var/lib/weaviate/backups'
       CLUSTER_HOSTNAME: 'node1'
 volumes:
-  weaviate_data:
+  colpali_demo:
 ...

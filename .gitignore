@@ -1,4 +1,5 @@
 data/embeddings
+data/img
 temp*.py
 outputs
 secrets.toml
